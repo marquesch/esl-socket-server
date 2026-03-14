@@ -16,7 +16,7 @@ func main() {
 func handleConnection(ctx context.Context, conn *eslgo.Conn, response *eslgo.RawResponse) {
 	fmt.Printf("Got connection! %#v\n", response)
 
-	response, err := conn.SendCommand(ctx, command.API{Command: "echo", Arguments: "", Background: false})
+	response, err := conn.SendCommand(ctx, command.API{Command: "echo", Arguments: "", Background: true})
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,6 @@
+services:
+  socket-server:
+    build: .
+
+  fs:
+    image: safarov/freeswitch
