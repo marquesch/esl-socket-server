@@ -1,6 +1,12 @@
 services:
   socket-server:
+    stop_grace_period: 1s
     build: .
+    ports:
+      - "8084:8084"
+    volumes:
+      - ./server:/app
 
   fs:
     image: safarov/freeswitch
+    network_mode: host

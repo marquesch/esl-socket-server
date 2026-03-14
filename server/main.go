@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
+	"net/textproto"
 
 	"github.com/percipia/eslgo"
 	"github.com/percipia/eslgo/command"
@@ -14,20 +14,35 @@ func main() {
 }
 
 func handleConnection(ctx context.Context, conn *eslgo.Conn, response *eslgo.RawResponse) {
-	fmt.Printf("Got connection! %#v\n", response)
+	uuid := response.GetHeader("Unique-ID")
+	fmt.Println("UUID:", uuid)
 
-	response, err := conn.SendCommand(ctx, command.API{Command: "echo", Arguments: "", Background: true})
+	conn.EnableEvents(ctx)
+	conn.SendCommand(ctx, command.Linger{Enabled: true})
+
+	_, err := conn.SendCommand(ctx, &command.SendMessage{
+		UUID: uuid,
+		Headers: textproto.MIMEHeader{
+			"call-command":     []string{"execute"},
+			"execute-app-name": []string{"bridge"},
+			"execute-app-arg":  []string{"{ignore_early_media=true}user/1000"},
+		},
+		Sync: false,
+		SyncPri: false,
+	})
 	if err != nil {
-		panic(err)
+		fmt.Println("Bridge error:", err)
+		return
 	}
+	fmt.Println("Bridge command sent, waiting...")
 
-	if response.IsOk() {
-		fmt.Println("Echoing!")
-	}
+	conn.SendCommand(ctx, &command.SendMessage{
+		UUID: uuid,
+		Headers: textproto.MIMEHeader{
+			"call-command": []string{"hangup"},
+			"hangup-cause": []string{"NORMAL_CLEARING"},
+		},
+	})
 
-	fmt.Println("Sleeping for 5s")
-	time.Sleep(5000)
-	fmt.Println("Waking up")
-
-	conn.HangupCall(ctx, response.ChannelUUID(), "NORMAL_CLEARING")
+	fmt.Println("Call completed:", uuid)
 }
