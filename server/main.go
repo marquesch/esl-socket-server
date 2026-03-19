@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/textproto"
-	"time"
 
 	"github.com/percipia/eslgo"
 	"github.com/percipia/eslgo/command"
 )
+
 
 func main() {
 	eslgo.ListenAndServe(":8084", handleConnection)
@@ -35,9 +35,11 @@ func handleConnection(ctx context.Context, conn *eslgo.Conn, response *eslgo.Raw
 		Headers: textproto.MIMEHeader{
 			"call-command":     []string{"execute"},
 			"execute-app-name": []string{"bridge"},
-			"execute-app-arg":  []string{"{ignore_early_media=true}user/1000"},
+			"execute-app-arg": []string{
+				"{hangup_after_bridge=true,ignore_early_media=true}user/1000",
+			},
 		},
-		Sync: false,
+		Sync:    false,
 		SyncPri: false,
 	})
 	if err != nil {
@@ -45,7 +47,6 @@ func handleConnection(ctx context.Context, conn *eslgo.Conn, response *eslgo.Raw
 		return
 	}
 	fmt.Println("Bridge command sent!")
-	time.Sleep(10 * time.Second)
 
 	<-callCh
 	fmt.Println("Call hungup! Cleaning up resources.")
