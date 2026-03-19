@@ -1,91 +1,50 @@
 package call
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
+	"strings"
 )
 
-type Transport string
-
-func (t *Transport) isValid() bool {
-	switch *t {
-	case TransportTCP, TransportUDP:
-		return true
+func NewDialParams(
+	variables, customHeaders map[string]string,
+	destination string,
+	sipTrunk SIPTrunk,
+) *DialParams {
+	return &DialParams{
+		Variables:     variables,
+		CustomHeaders: customHeaders,
+		Destination:   destination,
+		SIPTrunk:      sipTrunk,
 	}
-
-	return false
-}
-
-func (t *Transport) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-
-	v := Transport(s)
-	if !v.isValid() {
-		return errors.New("invalid transport")
-	}
-
-	*t = v
-
-	return nil
-}
-
-const (
-	TransportTCP Transport = "tcp"
-	TransportUDP Transport = "udp"
-)
-
-type SIPAuth struct {
-	username string
-	password string
-}
-
-type SIPTrunk struct {
-	Host      string
-	Port      string
-	Auth      *SIPAuth
-	Transport Transport
 }
 
 type DialParams struct {
 	Variables     map[string]string `json:"variables"`
 	CustomHeaders map[string]string `json:"headers"`
-	SofiaProfile  string
-	Destination   string
-	SIPTrunk      SIPTrunk
+	Destination   string            `json:"destination"`
+	SIPTrunk      SIPTrunk          `json:"sip_trunk"`
 }
 
 func (d *DialParams) String() string {
-	var varsString string
-	for varKey := range d.Variables {
-		varsString = fmt.Sprintf("%s,%s=%s", varsString, varKey, d.Variables[varKey])
+	vars := make([]string, 0, len(d.Variables))
+	for key, value := range d.Variables {
+		vars = append(vars, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	for headerKey := range d.CustomHeaders {
-		varsString = fmt.Sprintf(
-			"%s,sip_h_X-%s=%s",
-			varsString,
-			headerKey,
-			d.CustomHeaders[headerKey],
-		)
+	for key, value := range d.CustomHeaders {
+		vars = append(vars, fmt.Sprintf("sip_h_X-%s=%s", key, value))
 	}
 
 	if d.SIPTrunk.Auth != nil {
-		varsString = fmt.Sprintf(
-			"%s,sip_auth_username=%s,sip_auth_password=%s",
-			varsString,
-			d.SIPTrunk.Auth.username,
-			d.SIPTrunk.Auth.password,
-		)
+		vars = append(vars, fmt.Sprintf("sip_auth_username=%s", d.SIPTrunk.Auth.Username))
+		vars = append(vars, fmt.Sprintf("sip_auth_password=%s", d.SIPTrunk.Auth.Password))
 	}
 
+	varsString := strings.Join(vars, ",")
+
 	return fmt.Sprintf(
-		"[%s]sofia/%s/%s@%s:%s;transport=%s",
+		"[%s]sofia/external/%s@%s:%s;transport=%s",
 		varsString,
-		d.SofiaProfile,
 		d.Destination,
 		d.SIPTrunk.Host,
 		d.SIPTrunk.Port,
