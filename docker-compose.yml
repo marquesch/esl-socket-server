@@ -5,8 +5,48 @@ services:
     ports:
       - "8084:8084"
     volumes:
-      - ./server:/app
+      - ./server/:/app
+    networks:
+      - fs_net
 
-  fs:
+  fs1:
     image: safarov/freeswitch
-    network_mode: host
+    networks:
+      - fs_net
+    environment:
+      LOCAL_IP: auto
+      EXTERNAL_RTP_IP: ${HOST_IP}
+      EXTERNAL_SIP_IP: ${HOST_IP}
+      RTP_START_PORT: 16384
+      RTP_END_PORT: 16484
+      SIP_PORT: 5060
+    ports:
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "8021:8021"
+      - "16384-16484:16384-16484/udp"
+    volumes:
+      - "./freeswitch/vars.xml:/etc/freeswitch/vars.xml:ro"
+      - "./freeswitch/autoload_configs/switch.conf.xml:/etc/freeswitch/autoload_configs/switch.conf.xml:ro"
+      - "./freeswitch/autoload_configs/event_socket.conf.xml:/etc/freeswitch/autoload_configs/event_socket.conf.xml"
+
+  fs2:
+    image: safarov/freeswitch
+    networks:
+      - fs_net
+    environment:
+      LOCAL_IP: auto
+      EXTERNAL_RTP_IP: ${HOST_IP}
+      EXTERNAL_SIP_IP: ${HOST_IP}
+      RTP_START_PORT: 16500
+      RTP_END_PORT: 16600
+      SIP_PORT: 5060
+    ports:
+      - "5061:5060/udp"
+      - "5061:5060/tcp"
+      - "8022:8021"
+      - "16500-16600:16500-16600/udp"
+
+networks:
+  fs_net:
+    driver: bridge
