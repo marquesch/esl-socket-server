@@ -28,7 +28,7 @@ services:
     volumes:
       - "./freeswitch/vars.xml:/etc/freeswitch/vars.xml:ro"
       - "./freeswitch/autoload_configs/switch.conf.xml:/etc/freeswitch/autoload_configs/switch.conf.xml:ro"
-      - "./freeswitch/autoload_configs/event_socket.conf.xml:/etc/freeswitch/autoload_configs/event_socket.conf.xml"
+      - "./freeswitch/autoload_configs/event_socket.conf.xml:/etc/freeswitch/autoload_configs/event_socket.conf.xml:ro"
 
   fs2:
     image: safarov/freeswitch
@@ -46,6 +46,10 @@ services:
       - "5061:5060/tcp"
       - "8022:8021"
       - "16500-16600:16500-16600/udp"
+    volumes:
+      - "./freeswitch/vars.xml:/etc/freeswitch/vars.xml:ro"
+      - "./freeswitch/autoload_configs/switch.conf.xml:/etc/freeswitch/autoload_configs/switch.conf.xml:ro"
+      - "./freeswitch/autoload_configs/event_socket.conf.xml:/etc/freeswitch/autoload_configs/event_socket.conf.xml:ro"
 
 networks:
   fs_net:
